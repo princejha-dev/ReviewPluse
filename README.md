@@ -1,0 +1,209 @@
+# ReviewPulse — Restaurant Feedback Analysis
+
+AI-powered customer feedback analysis built specifically for restaurants. Upload your reviews CSV and get instant sentiment analysis, issue detection, and strength identification.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4, Recharts |
+| Backend | FastAPI, SQLAlchemy, Uvicorn |
+| Database | PostgreSQL |
+| AI | Google Gemini 2.0 Flash (via `google-genai` SDK) |
+
+---
+
+## Prerequisites
+
+- **Python 3.11+** — [Download](https://www.python.org/downloads/)
+- **Node.js 18+** — [Download](https://nodejs.org/)
+- **PostgreSQL** — [Download](https://www.postgresql.org/download/) (or use pgAdmin4)
+- **Google API Key** — [Get from AI Studio](https://aistudio.google.com/app/apikey)
+
+---
+
+## Setup Guide
+
+### 1. Clone / Download the Project
+
+```powershell
+cd "c:\Users\Prince\Desktop\Surf Project"
+```
+
+### 2. Create PostgreSQL Database
+
+Open **pgAdmin4** and create a new database:
+```
+Database name: feedback_analysis_db
+User: postgres
+Password: 1234
+Port: 5432
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the project root:
+```env
+DATABASE_URL=postgresql://postgres:1234@localhost:5432/feedback_analysis_db
+GOOGLE_API_KEY=your_actual_google_api_key_here
+```
+
+> ⚠️ Replace `your_actual_google_api_key_here` with your real API key from [AI Studio](https://aistudio.google.com/app/apikey)
+
+### 4. Setup Python Virtual Environment & Install Backend Dependencies
+
+```powershell
+python -m venv myenv
+myenv/scripts/activate
+pip install -r requirements.txt
+pip install google-genai
+```
+
+### 5. Install Frontend Dependencies
+
+```powershell
+cd reviewpulse-frontend
+npm install
+cd ..
+```
+
+---
+
+## Running the Application
+
+### Start Backend (Terminal 1)
+
+```powershell
+cd "c:\Users\Prince\Desktop\Surf Project"
+myenv/scripts/activate
+uvicorn backend.main:app --reload
+```
+
+Backend runs at: **http://127.0.0.1:8000**
+
+### Start Frontend (Terminal 2)
+
+```powershell
+cd "c:\Users\Prince\Desktop\Surf Project\reviewpulse-frontend"
+npm run dev
+```
+
+Frontend runs at: **http://localhost:3000**
+
+---
+
+## How to Use
+
+1. Open **http://localhost:3000**
+2. Scroll to **"Get Started"** section
+3. Upload a CSV file with a `review_text` column (and optional `rating` column)
+4. Click **"Upload & Analyze"**
+5. AI processes reviews in batches of 15 (with 5s delay between batches)
+6. You are redirected to the **Dashboard** with real results
+
+---
+
+## CSV File Format
+
+Your CSV must have a `review_text` column. `rating` is optional.
+
+```csv
+review_text,rating
+"The food was amazing and fresh!",5
+"Waited 45 minutes for our order",2
+"Staff was incredibly friendly and attentive",5
+"The restrooms were not clean",1
+"Beautiful ambience, perfect for a date night",4
+```
+
+---
+
+## Hardcoded Categories
+
+The app analyzes feedback across **5 restaurant categories**:
+
+| Category | What It Covers |
+|----------|---------------|
+| `staff` | Service quality, friendliness, professionalism |
+| `food_quality` | Taste, freshness, presentation, portions |
+| `ambience` | Atmosphere, decor, music, lighting, seating |
+| `wait_time` | Wait for food, service, or table |
+| `hygiene` | Cleanliness, sanitation, washrooms |
+
+- **Positive sentiment** → category = **Strength** 💪
+- **Negative sentiment** → category = **Issue** ⚠️
+- **Neutral sentiment** → category = **Observation** 📝
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/upload` | Upload CSV, auto-processes in batches of 15 |
+| `GET` | `/api/summary` | Dashboard stats (strengths vs issues) |
+| `GET` | `/api/feedback` | List all feedbacks with analysis |
+| `GET` | `/api/trend` | Sentiment trend by date |
+| `GET` | `/api/insights` | Issue/strength breakdown + KPIs |
+| `GET` | `/api/alerts` | Dynamic alerts (spikes, repeated complaints) |
+
+---
+
+## Project Structure
+
+```
+Surf Project/
+├── .env                          # Environment variables
+├── requirements.txt              # Python dependencies
+├── sample_reviews.csv            # Example CSV file
+│
+├── backend/
+│   ├── main.py                   # FastAPI app entry point
+│   ├── db/
+│   │   ├── database.py           # PostgreSQL connection
+│   │   ├── models.py             # SQLAlchemy models (Feedback)
+│   │   └── crud.py               # Database operations + hardcoded categories
+│   ├── routes/
+│   │   └── feedback.py           # API endpoints
+│   ├── services/
+│   │   ├── ai_service.py         # Google Gemini AI integration
+│   │   └── batch_processor.py    # Batch processing (15 at a time)
+│   └── utils/
+│       └── csv_parser.py         # CSV validation
+│
+├── reviewpulse-frontend/
+│   ├── app/
+│   │   ├── page.tsx              # Home page (CSV upload)
+│   │   ├── dashboard/
+│   │   │   ├── page.tsx          # Dashboard (stats, charts, alerts)
+│   │   │   ├── feedback/page.tsx # Feedback list (read-only)
+│   │   │   ├── insights/page.tsx # Insights (issues vs strengths)
+│   │   │   ├── alerts/page.tsx   # Alerts page
+│   │   │   ├── profile/page.tsx  # Restaurant profile
+│   │   │   └── settings/page.tsx # Settings
+│   │   └── components/
+│   │       └── charts/           # Recharts components
+│   └── package.json
+│
+└── myenv/                        # Python virtual environment
+```
+
+---
+
+## Rate Limiting
+
+The Google Gemini free tier has rate limits (~15 requests per minute). The app handles this with:
+- **5-second delay** between batch processing
+- **Exponential backoff retry** on 429 errors (10s → 20s → 30s, max 3 retries)
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|---------|
+| `ImportError: attempted relative import` | Run uvicorn from project root: `uvicorn backend.main:app --reload` |
+| `Turbopack is not supported` | Already fixed — uses `next dev --webpack` |
+| `429 Too Many Requests` | Wait a minute and retry. Free tier has rate limits |
+| `GOOGLE_API_KEY not valid` | Get a new key from [AI Studio](https://aistudio.google.com/app/apikey) and update `.env` |
+| `Database connection failed` | Ensure PostgreSQL is running and `.env` credentials are correct |

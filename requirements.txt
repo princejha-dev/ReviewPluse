@@ -8,5 +8,5 @@ python-multipart
 groq
 streamlit
 matplotlib
-
-
+passlib
+bcrypt

@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Tuple
-
+import io
 
 def validate_csv(file_content) -> Tuple[bool, str, pd.DataFrame]:
     """
@@ -8,7 +8,10 @@ def validate_csv(file_content) -> Tuple[bool, str, pd.DataFrame]:
     Required columns: review_text (required), rating (optional)
     """
     try:
-        df = pd.read_csv(file_content)
+        # Read the contents explicitly to avoid SpooledTemporaryFile issues
+        content = file_content.read()
+        file_content.seek(0)
+        df = pd.read_csv(io.BytesIO(content))
 
         if 'review_text' not in df.columns:
             return False, "CSV must have 'review_text' column", None

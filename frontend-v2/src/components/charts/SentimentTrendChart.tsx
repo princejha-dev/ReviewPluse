@@ -2,21 +2,19 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
-const mockData = [
-  { day: "Mon", positive: 45, negative: 12, neutral: 10 },
-  { day: "Tue", positive: 52, negative: 8, neutral: 15 },
-  { day: "Wed", positive: 48, negative: 15, neutral: 11 },
-  { day: "Thu", positive: 61, negative: 5, neutral: 8 },
-  { day: "Fri", positive: 59, negative: 9, neutral: 12 },
-  { day: "Sat", positive: 75, negative: 6, neutral: 18 },
-  { day: "Sun", positive: 81, negative: 4, neutral: 14 },
-]
+type Props = {
+  data: any[]
+}
 
-export default function SentimentTrendChart() {
+export default function SentimentTrendChart({ data }: Props) {
+  if (!data || data.length === 0) {
+     return <div className="h-full w-full flex items-center justify-center text-[#757682]">No trend data available. Analyze reviews first.</div>
+  }
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
-        data={mockData}
+        data={data}
         margin={{ top: 5, right: 30, left: -20, bottom: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e1e9" />

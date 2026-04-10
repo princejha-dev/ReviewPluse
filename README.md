@@ -153,39 +153,31 @@ The app analyzes feedback across **5 restaurant categories**:
 
 ```
 Surf Project/
-├── .env                          # Environment variables
 ├── requirements.txt              # Python dependencies
-├── sample_reviews.csv            # Example CSV file
-│
 ├── backend/
 │   ├── main.py                   # FastAPI app entry point
 │   ├── db/
 │   │   ├── database.py           # PostgreSQL connection
-│   │   ├── models.py             # SQLAlchemy models (Feedback)
-│   │   └── crud.py               # Database operations + hardcoded categories
+│   │   ├── models.py             # SQLAlchemy models 
+│   │   └── crud.py               # Database operations 
 │   ├── routes/
+│   │   ├── auth.py               # Authentication endpoints
 │   │   └── feedback.py           # API endpoints
 │   ├── services/
-│   │   ├── ai_service.py         # Google Gemini AI integration
-│   │   └── batch_processor.py    # Batch processing (15 at a time)
+│   │   ├── ai_service.py         # AI integration
+│   │   └── batch_processor.py    # Batch processing
 │   └── utils/
 │       └── csv_parser.py         # CSV validation
 │
-├── reviewpulse-frontend/
-│   ├── app/
-│   │   ├── page.tsx              # Home page (CSV upload)
-│   │   ├── dashboard/
-│   │   │   ├── page.tsx          # Dashboard (stats, charts, alerts)
-│   │   │   ├── feedback/page.tsx # Feedback list (read-only)
-│   │   │   ├── insights/page.tsx # Insights (issues vs strengths)
-│   │   │   ├── alerts/page.tsx   # Alerts page
-│   │   │   ├── profile/page.tsx  # Restaurant profile
-│   │   │   └── settings/page.tsx # Settings
-│   │   └── components/
-│   │       └── charts/           # Recharts components
+├── frontend-v2/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx              # Landing page
+│   │   │   ├── dashboard/            # Dashboard pages
+│   │   │   └── (auth)/               # Login & Signup pages
+│   │   ├── components/               # React components (charts, layout)
+│   │   └── context/                  # React context (Auth)
 │   └── package.json
-│
-└── myenv/                        # Python virtual environment
 ```
 
 ---

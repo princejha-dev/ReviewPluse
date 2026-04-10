@@ -202,6 +202,32 @@ Example format:
                     "assessment": response_text[:100]
                 }
             
+            # Deterministic override for strengths/improvements
+            try:
+                # Calculate the most positive and negative issues
+                # Get reviews
+                from sqlalchemy import func
+                from ..db.models import Feedback
+                
+                pos_issues = self.db.query(
+                    Feedback.predicted_issue, func.count(Feedback.id).label("count")
+                ).filter(Feedback.processed == True, Feedback.sentiment == "positive").group_by(Feedback.predicted_issue).order_by(func.count(Feedback.id).desc()).all()
+                
+                neg_issues = self.db.query(
+                    Feedback.predicted_issue, func.count(Feedback.id).label("count")
+                ).filter(Feedback.processed == True, Feedback.sentiment == "negative").group_by(Feedback.predicted_issue).order_by(func.count(Feedback.id).desc()).all()
+                
+                real_strengths = [row.predicted_issue.replace('_', ' ').capitalize() for row in pos_issues if row.predicted_issue]
+                real_issues = [row.predicted_issue.replace('_', ' ').capitalize() for row in neg_issues if row.predicted_issue]
+                
+                if real_strengths:
+                    insights["strengths"] = real_strengths[:3]
+                if real_issues:
+                    insights["improvements"] = real_issues[:3]
+                    
+            except Exception as ex:
+                print(f"Error overriding deterministically: {ex}")
+
             return {
                 "success": True,
                 "insights": insights,

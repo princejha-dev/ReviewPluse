@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ShieldAlert, Info, Download, Target, Zap } from "lucide-react"
+import { ShieldAlert, Download, Target } from "lucide-react"
 import SentimentTrendChart from "@/components/charts/SentimentTrendChart"
 import SentimentChart from "@/components/charts/SentimentChart"
 import IssueChart from "@/components/charts/IssueChart"
@@ -18,36 +18,27 @@ type Summary = {
     top_issues: Record<string, { count: number, percentage: number, avg_rating: number }>
   }
   insights: {
-    assessment: string
-    improvements: string[]
-    recommendations: string[]
     strengths: string[]
+    improvements: string[]
   }
-}
-
-type Alert = {
-  type: string
-  severity: string
-  message: string
-  details?: any
 }
 
 export default function DashboardPage() {
   const [data, setData] = useState<Summary | null>(null)
-  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [trendData, setTrendData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch("http://127.0.0.1:8000/api/insights").then((r) => r.json()),
-      fetch("http://127.0.0.1:8000/api/alerts").then((r) => r.json()),
+      fetch("http://127.0.0.1:8000/api/sentiment-trend").then((r) => r.json()),
     ])
-      .then(([insightsData, alertsData]) => {
+      .then(([insightsData, trendResponse]) => {
         if(insightsData.success) {
            setData(insightsData)
         }
-        if(alertsData.alerts) {
-           setAlerts(alertsData.alerts)
+        if(trendResponse.trend) {
+           setTrendData(trendResponse.trend)
         }
         setLoading(false)
       })
@@ -75,9 +66,7 @@ export default function DashboardPage() {
   const neutral = summary.sentiment.neutral.count
   const negative = summary.sentiment.negative.count
 
-  const topIssueKey = Object.keys(summary.top_issues)[0]
-  const topIssue = topIssueKey ? topIssueKey.replace("_", " ") : "None Detected"
-
+  const topIssue = insights.improvements[0] || "None Detected"
   const topStrength = insights.strengths[0] || "None Detected"
 
   const sentimentData = [
@@ -119,9 +108,9 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-extrabold mt-2 text-[#ef4444]">{summary.sentiment.negative.percentage.toFixed(1)}%</h2>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#e3e1e9]">
-          <p className="text-[#757682] text-xs font-semibold uppercase tracking-wider">Top Issue Area</p>
+          <p className="text-[#757682] text-xs font-semibold uppercase tracking-wider">Core Issue Area</p>
           <h2 className="text-lg font-bold mt-2 text-[#1a1b21] capitalize flex items-center gap-2">
-             <Target size={18} className="text-[#f59e0b]"/> {topIssue}
+             <Target size={18} className="text-[#ef4444]"/> {topIssue}
           </h2>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#e3e1e9]">
@@ -132,95 +121,34 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* BIG GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* CHARTS */}
-        <div className="lg:col-span-2 space-y-6">
-           {/* Top 2 charts */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[320px] flex flex-col">
-                <h3 className="font-bold text-[#1a1b21] mb-4">Sentiment Distribution</h3>
-                <div className="flex-1 min-h-0">
-                  <SentimentChart data={sentimentData} />
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[320px] flex flex-col">
-                <h3 className="font-bold text-[#1a1b21] mb-4">Issue Concentration</h3>
-                <div className="flex-1 min-h-0">
-                  <IssueChart data={issueData} />
-                </div>
-              </div>
-           </div>
-           
-           {/* Trend Line */}
-           <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[350px] flex flex-col">
-              <div className="mb-4">
-                 <h3 className="font-bold text-[#1a1b21]">7-Day Sentiment Forecast</h3>
-                 <p className="text-xs text-[#757682]">Volume of sentiment categories over the last 7 trailing days.</p>
-              </div>
+      {/* CHARTS */}
+      <div className="space-y-6">
+         {/* Top 2 charts */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[320px] flex flex-col">
+              <h3 className="font-bold text-[#1a1b21] mb-4">Sentiment Distribution</h3>
               <div className="flex-1 min-h-0">
-                 <SentimentTrendChart />
+                <SentimentChart data={sentimentData} />
               </div>
-           </div>
-        </div>
-
-        {/* FEED / ALERTS & AI */}
-        <div className="space-y-6">
-           
-           {/* ALERTS */}
-           <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9]">
-              <h3 className="font-bold text-[#1a1b21] mb-4 flex items-center gap-2">
-                 <ShieldAlert size={18} className="text-[#ef4444]" /> Critical Alerts
-              </h3>
-              {alerts.length === 0 ? (
-                 <p className="text-sm text-[#757682] bg-[#f4f3fa] p-3 rounded-lg text-center">All systems healthy. No anomalies detected.</p>
-              ) : (
-                 <div className="space-y-3">
-                   {alerts.map((alert, i) => (
-                      <div key={i} className={`p-4 rounded-xl border-l-4 ${alert.severity === 'HIGH' ? 'border-[#ef4444] bg-[#ffdad6]' : 'border-[#f59e0b] bg-[#fff8e1]'}`}>
-                         <h4 className={`font-semibold text-sm ${alert.severity === 'HIGH' ? 'text-[#93000a]' : 'text-[#b45309]'}`}>{alert.type.replace(/_/g, " ")}</h4>
-                         <p className="text-xs mt-1 text-gray-800">{alert.message}</p>
-                      </div>
-                   ))}
-                 </div>
-              )}
-           </div>
-
-           {/* AI INSIGHTS */}
-           <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#1e3a8a] relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                 <Zap size={64} className="text-[#1e3a8a]"/>
+            </div>
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[320px] flex flex-col">
+              <h3 className="font-bold text-[#1a1b21] mb-4">Issue Concentration</h3>
+              <div className="flex-1 min-h-0">
+                <IssueChart data={issueData} />
               </div>
-              <h3 className="font-bold text-[#1e3a8a] mb-4 relative z-10 flex items-center gap-2">
-                 🧠 AI Assessment
-              </h3>
-              <p className="text-sm font-medium text-[#1a1b21] italic mb-6 relative z-10">"{insights.assessment}"</p>
-              
-              <div className="space-y-4 relative z-10">
-                 <div>
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#10b981] mb-2">Strengths</h5>
-                    <ul className="text-sm text-[#444651] space-y-1 list-disc list-inside">
-                       {insights.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                 </div>
-                 <div>
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#ef4444] mb-2">Areas to Improve</h5>
-                    <ul className="text-sm text-[#444651] space-y-1 list-disc list-inside">
-                       {insights.improvements.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                 </div>
-                 <div className="bg-[#f4f3fa] p-3 rounded-xl">
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#1e3a8a] mb-2">Action Items</h5>
-                    <ul className="text-sm text-[#1e3a8a] space-y-1 list-disc list-inside">
-                       {insights.recommendations.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                 </div>
-              </div>
-           </div>
-
-        </div>
-
+            </div>
+         </div>
+         
+         {/* Trend Line */}
+         <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#e3e1e9] h-[350px] flex flex-col">
+            <div className="mb-4">
+               <h3 className="font-bold text-[#1a1b21]">7-Day Sentiment Forecast</h3>
+               <p className="text-xs text-[#757682]">Volume of sentiment categories over the last 7 trailing days.</p>
+            </div>
+            <div className="flex-1 min-h-0">
+               <SentimentTrendChart data={trendData} />
+            </div>
+         </div>
       </div>
     </div>
   )

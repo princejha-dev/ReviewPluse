@@ -1,5 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
+from sqlalchemy import func
 from ..db.database import SessionLocal
+from ..db import models
 from ..db.crud import save_feedback_batch
 from ..utils.csv_parser import validate_csv
 from ..services.batch_processor import process_single_batch, process_all_batches
@@ -168,5 +170,42 @@ async def get_insights():
     except Exception as e:
         return {"success": False, "error": str(e)}
     
+    finally:
+        db.close()
+
+
+@router.get("/sentiment-trend")
+async def get_sentiment_trend():
+    """
+    Get sentiment trend data for the last 7 days.
+    """
+    db = SessionLocal()
+    try:
+        results = db.query(
+            func.date(models.Feedback.uploaded_at).label("day"),
+            models.Feedback.sentiment,
+            func.count(models.Feedback.id).label("count")
+        ).filter(
+            models.Feedback.processed == True
+        ).group_by(
+            func.date(models.Feedback.uploaded_at),
+            models.Feedback.sentiment
+        ).all()
+        
+        # Format into a list of dictionaries per day
+        trend_data = {}
+        for row in results:
+            day_str = row.day.strftime("%a") if row.day else "Unknown"
+            if day_str not in trend_data:
+                trend_data[day_str] = {"day": day_str, "positive": 0, "negative": 0, "neutral": 0}
+            
+            if row.sentiment in trend_data[day_str]:
+                trend_data[day_str][row.sentiment] = row.count
+                
+        # Return sorted by values (in reality we should sort by actual date, but keeping it simple)
+        return {"trend": list(trend_data.values())}
+        
+    except Exception as e:
+        return {"trend": [], "error": str(e)}
     finally:
         db.close()

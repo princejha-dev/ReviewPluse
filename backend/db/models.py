@@ -9,9 +9,9 @@ class Feedback(Base):
     review_text = Column(Text)
     rating = Column(Integer, nullable=True)
 
-    predicted_issue = Column(String, nullable=True)  # staff, food_quality, ambience, wait_time, hygiene
+    # AI Analysis Results
     sentiment = Column(String, nullable=True)         # positive, negative, neutral
-    category_type = Column(String, nullable=True)     # strength, issue, observation
+    predicted_issue = Column(String, nullable=True)   # food_quality, service_quality, ambience_cleanliness, wait_time_efficiency, pricing_value
 
     processed = Column(Boolean, default=False)
     uploaded_at = Column(DateTime, default=datetime.now)

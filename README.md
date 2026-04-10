@@ -9,7 +9,7 @@ AI-powered customer feedback analysis built specifically for restaurants. Upload
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4, Recharts |
 | Backend | FastAPI, SQLAlchemy, Uvicorn |
 | Database | PostgreSQL |
-| AI | Google Gemini 2.0 Flash (via `google-genai` SDK) |
+| AI | Groq (via `groq` SDK) |
 
 ---
 
@@ -18,7 +18,7 @@ AI-powered customer feedback analysis built specifically for restaurants. Upload
 - **Python 3.11+** — [Download](https://www.python.org/downloads/)
 - **Node.js 18+** — [Download](https://nodejs.org/)
 - **PostgreSQL** — [Download](https://www.postgresql.org/download/) (or use pgAdmin4)
-- **Google API Key** — [Get from AI Studio](https://aistudio.google.com/app/apikey)
+- **Groq API Key** — [Get from Groq](https://groq.com/)
 
 ---
 
@@ -36,7 +36,7 @@ Open **pgAdmin4** and create a new database:
 ```
 Database name: feedback_analysis_db
 User: postgres
-Password: 1234
+Password: <your password
 Port: 5432
 ```
 
@@ -44,11 +44,11 @@ Port: 5432
 
 Create a `.env` file in the project root:
 ```env
-DATABASE_URL=postgresql://postgres:1234@localhost:5432/feedback_analysis_db
-GOOGLE_API_KEY=your_actual_google_api_key_here
+DATABASE_URL=postgresql://postgres:<password>@localhost:5432/feedback_analysis_db
+GROQ_API_KEY=your_actual_groq_api_key_here
 ```
 
-> ⚠️ Replace `your_actual_google_api_key_here` with your real API key from [AI Studio](https://aistudio.google.com/app/apikey)
+> ⚠️ Replace `your_actual_groq_api_key_here` with your real API key from [Groq](https://groq.com/)
 
 ### 4. Setup Python Virtual Environment & Install Backend Dependencies
 
@@ -56,13 +56,13 @@ GOOGLE_API_KEY=your_actual_google_api_key_here
 python -m venv myenv
 myenv/scripts/activate
 pip install -r requirements.txt
-pip install google-genai
+pip install groq
 ```
 
 ### 5. Install Frontend Dependencies
 
 ```powershell
-cd reviewpulse-frontend
+cd frontend-v2
 npm install
 cd ..
 ```
@@ -84,7 +84,7 @@ Backend runs at: **http://127.0.0.1:8000**
 ### Start Frontend (Terminal 2)
 
 ```powershell
-cd "c:\Users\Prince\Desktop\Surf Project\reviewpulse-frontend"
+cd "c:\Users\Prince\Desktop\Surf Project\frontend-v2"
 npm run dev
 ```
 
@@ -192,7 +192,7 @@ Surf Project/
 
 ## Rate Limiting
 
-The Google Gemini free tier has rate limits (~15 requests per minute). The app handles this with:
+The Groq free tier has rate limits (~15 requests per minute). The app handles this with:
 - **5-second delay** between batch processing
 - **Exponential backoff retry** on 429 errors (10s → 20s → 30s, max 3 retries)
 

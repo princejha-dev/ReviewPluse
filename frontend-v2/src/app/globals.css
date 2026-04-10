@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1e3a8a; /* Deep Blue */
+  --color-primary-container: #1e3a8a;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-neutral: #6b7280;
+  --color-accent: #a855f7;
+  --color-background: #f4f3fa; /* Soft surface */
+  --color-foreground: #1a1b21;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: inherit;
+  }
+}

@@ -4,4 +4,17 @@ myenv/
 
 __pycache__/
 
-STEP1_2_Read
+reviewpulse-frontend/
+
+FRONTEND_DESIGN_PROMPT.md
+BACKEND_GUIDE.md
+QUICKSTART.md
+
+sample_csv2.csv
+sample_reviews.csv
+
+test_batch_processing.py
+test_upload.py
+
+
+

@@ -1,126 +1,172 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from ..db.database import SessionLocal
-from ..db.crud import save_feedback_batch, get_feedback_summary, get_all_feedbacks, get_sentiment_trend, get_insights, get_alerts
+from ..db.crud import save_feedback_batch
 from ..utils.csv_parser import validate_csv
-from ..services.batch_processor import process_all_batches
+from ..services.batch_processor import process_single_batch, process_all_batches
+from ..services.alert_engine import AlertEngine
+from ..services.insights_engine import InsightEngine
+import json
 
 router = APIRouter(prefix="/api", tags=["feedback"])
 
 
 @router.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
+async def upload_csv(
+    file: UploadFile = File(...)
+):
     """
-    Upload CSV file with reviews.
-    Categories are hardcoded for restaurants: staff, food_quality, ambience, wait_time, hygiene.
-    After upload, auto-processes all reviews in batches of 15.
+    Upload CSV file with restaurant reviews
+    
+    Expected format:
+    - CSV columns: review_text (required), rating (optional)
+    
+    Categories are hardcoded in backend:
+    - food_quality
+    - service_quality
+    - ambience_cleanliness
+    - wait_time_efficiency
+    - pricing_value
     """
+    
     db = SessionLocal()
-
+    
     try:
-        # Validate CSV
+        # Validate and read CSV
         is_valid, error_msg, df = validate_csv(file.file)
         if not is_valid:
             raise HTTPException(status_code=400, detail=error_msg)
-
-        # Prepare reviews
+        
+        # Prepare reviews for database
         reviews_data = []
         for _, row in df.iterrows():
             reviews_data.append({
                 'review_text': row['review_text'],
-                'rating': row.get('rating')
+                'rating': row.get('rating')  # Optional
             })
-
+        
         # Save all reviews to database
         feedback_items = save_feedback_batch(db, reviews_data)
-        reviews_count = len(feedback_items)
-
-        # Auto-process in batches of 15
-        process_result = process_all_batches(db, batch_size=15)
-
+        
         return {
-            "message": "Upload and processing complete",
-            "reviews_uploaded": reviews_count,
-            "processing": process_result,
-            "success": True
+            "message": "Upload successful",
+            "reviews_uploaded": len(feedback_items),
+            "reviews_ready_for_processing": len(feedback_items),
+            "categories": [
+                "food_quality",
+                "service_quality",
+                "ambience_cleanliness",
+                "wait_time_efficiency",
+                "pricing_value"
+            ]
         }
-
+    
     except HTTPException:
+        db.close()
         raise
-
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-
+        db.close()
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
     finally:
         db.close()
 
 
-@router.get("/summary")
-async def get_summary():
-    """Dashboard summary: totals, sentiment counts, strengths, issues"""
+@router.post("/process-batch")
+async def process_one_batch():
+    """
+    STEP 3 & 4: Process ONE batch of 15 unprocessed reviews
+    
+    This triggers:
+    - Get 15 unprocessed reviews (Step 3)
+    - Send to Google AI (Step 4)
+    - Save results to database
+    """
     db = SessionLocal()
+    
     try:
-        return get_feedback_summary(db)
+        result = process_single_batch(db)
+        return result
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"message": f"Batch processing failed: {str(e)}", "success": False}
+    
     finally:
         db.close()
 
 
-@router.get("/feedback")
-async def get_feedbacks():
-    """Get all feedbacks for the feedback list"""
+@router.post("/process-all-batches")
+async def process_all():
+    """
+    STEP 3 & 4: Process ALL unprocessed reviews in batches of 15
+    
+    This continuously:
+    - Gets 15 unprocessed reviews (Step 3)
+    - Sends to Groq AI (Step 4)
+    - Saves results
+    - Repeats until no more reviews
+    """
     db = SessionLocal()
+    
     try:
-        feedbacks = get_all_feedbacks(db)
-        return [
-            {
-                "id": f.id,
-                "text": f.review_text,
-                "sentiment": f.sentiment or "pending",
-                "issue": f.predicted_issue or "pending",
-                "category_type": f.category_type or "pending",
-                "rating": f.rating,
-                "processed": f.processed,
-            }
-            for f in feedbacks
-        ]
+        result = process_all_batches(db)
+        return result
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-
-@router.get("/trend")
-async def get_trend():
-    """Sentiment trend data grouped by date"""
-    db = SessionLocal()
-    try:
-        return get_sentiment_trend(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-
-@router.get("/insights")
-async def get_insights_data():
-    """Issue breakdown, strength breakdown, KPIs"""
-    db = SessionLocal()
-    try:
-        return get_insights(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"message": f"Batch processing failed: {str(e)}", "success": False}
+    
     finally:
         db.close()
 
 
 @router.get("/alerts")
-async def get_alerts_data():
-    """Dynamic alerts based on feedback analysis"""
+async def get_alerts():
+    """
+    Get active alerts based on current feedback analysis
+    
+    Alerts include:
+    - Negative sentiment spike
+    - Issue concentration (one problem dominates)
+    - Rating/sentiment mismatches
+    """
     db = SessionLocal()
+    
     try:
-        return get_alerts(db)
+        alert_engine = AlertEngine(db)
+        alerts = alert_engine.get_all_alerts()
+        
+        return {
+            "active_alerts": len(alerts),
+            "alerts": alerts
+        }
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e), "alerts": []}
+    
+    finally:
+        db.close()
+
+
+@router.get("/insights")
+async def get_insights():
+    """
+    Generate AI-powered insights from all processed feedback
+    
+    Returns:
+    - Top strengths
+    - Areas for improvement
+    - Actionable recommendations
+    - Overall assessment
+    """
+    db = SessionLocal()
+    
+    try:
+        insight_engine = InsightEngine(db)
+        insights = insight_engine.generate_insights()
+        return insights
+    
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
     finally:
         db.close()

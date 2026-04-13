@@ -1,201 +1,122 @@
-# ReviewPulse — Restaurant Feedback Analysis
+# ReviewPulse 📊  
+**Restaurant Feedback Analysis Platform**
 
-AI-powered customer feedback analysis built specifically for restaurants. Upload your reviews CSV and get instant sentiment analysis, issue detection, and strength identification.
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4, Recharts |
-| Backend | FastAPI, SQLAlchemy, Uvicorn |
-| Database | PostgreSQL |
-| AI | Groq (via `groq` SDK) |
+## 📖 Overview  
+ReviewPulse is an AI-powered analytics platform designed specifically for restaurants. It allows owners to upload raw customer reviews (via CSV) and uses advanced AI to automatically categorize feedback, extract sentiment, and deliver actionable insights. Stop guessing what your customers want, and let data drive your decisions.
 
 ---
 
-## Prerequisites
-
-- **Python 3.11+** — [Download](https://www.python.org/downloads/)
-- **Node.js 18+** — [Download](https://nodejs.org/)
-- **PostgreSQL** — [Download](https://www.postgresql.org/download/) (or use pgAdmin4)
-- **Groq API Key** — [Get from Groq](https://groq.com/)
+## ✨ Features  
+- **Automated Processing:** Upload your CSV file and instantly process reviews in batches.
+- **Restaurant-Specific Categories:** AI classifies feedback into critical areas: `staff`, `food_quality`, `ambience`, `wait_time`, and `hygiene`.
+- **Sentiment Extraction:** Determines if feedback is positive (strength), negative (issue), or neutral (observation).
+- **AI-Generated Insights:** Uses LLMs to read through parsed data and provide detailed, natural-language summaries, key findings, and actionable steps to improve business health.
+- **Dynamic Alerts:** Auto-generates critical notifications based on negative feedback spikes and repeated complaints.
+- **Live Dashboard:** Visualizes trends, positive/negative rates, and issues/strengths breakdowns in real time.
 
 ---
 
-## Setup Guide
-
-### 1. Clone / Download the Project
-
-```powershell
-cd "c:\Users\Prince\Desktop\Surf Project"
+## 🏗️ Architecture  
+```mermaid
+graph LR
+    A[Frontend: Next.js] -->|API Requests| B[Backend: FastAPI]
+    B -->|Batch Processing & Insights| C[AI: Groq LLM]
+    B <-->|Read/Write| D[(Supabase: PostgreSQL)]
 ```
 
-### 2. Create PostgreSQL Database
+---
 
-Open **pgAdmin4** and create a new database:
-```
-Database name: feedback_analysis_db
-User: postgres
-Password: <your password
-Port: 5432
-```
+## 💻 Tech Stack  
 
-### 3. Configure Environment Variables
+**Frontend**  
+- Next.js 16 (App Router)
+- React 19 & TypeScript
+- Tailwind CSS v4 & Recharts
 
-Create a `.env` file in the project root:
-```env
-DATABASE_URL=postgresql://postgres:<password>@localhost:5432/feedback_analysis_db
-GROQ_API_KEY=your_actual_groq_api_key_here
-```
+**Backend & AI**  
+- FastAPI (Python)
+- Groq LLM (High-speed AI Inference)
+- SQLAlchemy (ORM)
 
-> ⚠️ Replace `your_actual_groq_api_key_here` with your real API key from [Groq](https://groq.com/)
+**Database**  
+- PostgreSQL (Hosted on Supabase via Connection Pooling)
 
-### 4. Setup Python Virtual Environment & Install Backend Dependencies
+---
 
-```powershell
+## ⚙️ Local Setup
+
+Follow these steps to run the project locally on your machine.
+
+### 1. Database Configuration
+Create a PostgreSQL database on Supabase and copy your *Connection Pooling* (Supavisor) URL (typically port 6543).
+
+### 2. Backend Setup
+```bash
+# Create and activate virtual environment
 python -m venv myenv
-myenv/scripts/activate
+myenv\Scripts\activate  # On Windows
+
+# Install dependencies
 pip install -r requirements.txt
-pip install groq
-```
 
-### 5. Install Frontend Dependencies
+# Create a .env file in the root
+DATABASE_URL=your_supabase_pooler_url_here?sslmode=require
+GROQ_API_KEY=your_groq_api_key_here
 
-```powershell
-cd frontend-v2
-npm install
-cd ..
-```
-
----
-
-## Running the Application
-
-### Start Backend (Terminal 1)
-
-```powershell
-cd "c:\Users\Prince\Desktop\Surf Project"
-myenv/scripts/activate
+# Run the server
 uvicorn backend.main:app --reload
 ```
+*Backend runs on `http://127.0.0.1:8000`*
 
-Backend runs at: **http://127.0.0.1:8000**
+### 3. Frontend Setup
+```bash
+cd frontend-v2
 
-### Start Frontend (Terminal 2)
+# Install dependencies
+npm install
 
-```powershell
-cd "c:\Users\Prince\Desktop\Surf Project\frontend-v2"
+# Create a .env.local file in the frontend directory
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+
+# Start the app
 npm run dev
 ```
+*Frontend runs on `http://localhost:3000`*
 
-Frontend runs at: **http://localhost:3000**
-
----
-
-## How to Use
-
-1. Open **http://localhost:3000**
-2. Scroll to **"Get Started"** section
-3. Upload a CSV file with a `review_text` column (and optional `rating` column)
-4. Click **"Upload & Analyze"**
-5. AI processes reviews in batches of 15 (with 5s delay between batches)
-6. You are redirected to the **Dashboard** with real results
+*(Note: We have provided a `sample_reviews.csv` at the root of the project to test the software.)*
 
 ---
 
-## CSV File Format
-
-Your CSV must have a `review_text` column. `rating` is optional.
-
-```csv
-review_text,rating
-"The food was amazing and fresh!",5
-"Waited 45 minutes for our order",2
-"Staff was incredibly friendly and attentive",5
-"The restrooms were not clean",1
-"Beautiful ambience, perfect for a date night",4
-```
+## 🚀 Deployment  
+- **Backend:** Deployed on **Render** (as a Web Service with Gunicorn).
+- **Frontend:** Deployed on **Vercel** (connects directly to your GitHub repository).
+- **Database:** Hosted securely on **Supabase**.
 
 ---
 
-## Hardcoded Categories
+## 📝 Example Output  
 
-The app analyzes feedback across **5 restaurant categories**:
+**Input (Raw CSV Data):**  
+> *"The pasta was cold, but the waiter was incredibly friendly and gave us a free dessert."*
 
-| Category | What It Covers |
-|----------|---------------|
-| `staff` | Service quality, friendliness, professionalism |
-| `food_quality` | Taste, freshness, presentation, portions |
-| `ambience` | Atmosphere, decor, music, lighting, seating |
-| `wait_time` | Wait for food, service, or table |
-| `hygiene` | Cleanliness, sanitation, washrooms |
+**AI Output (Processed):**  
+- **Issue Detected:** `food_quality` (Sentiment: Negative) ⚠️
+- **Strength Detected:** `staff` (Sentiment: Positive) 💪
 
-- **Positive sentiment** → category = **Strength** 💪
-- **Negative sentiment** → category = **Issue** ⚠️
-- **Neutral sentiment** → category = **Observation** 📝
+**AI Generated Insight:**
+> *"Consider reviewing kitchen hold times. Wait staff is doing an excellent job recovering from food temperature issues, but reducing time under the heat lamp will improve overall food quality scores."*
 
 ---
 
-## API Endpoints
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| `POST` | `/api/upload` | Upload CSV, auto-processes in batches of 15 |
-| `GET` | `/api/summary` | Dashboard stats (strengths vs issues) |
-| `GET` | `/api/feedback` | List all feedbacks with analysis |
-| `GET` | `/api/trend` | Sentiment trend by date |
-| `GET` | `/api/insights` | Issue/strength breakdown + KPIs |
-| `GET` | `/api/alerts` | Dynamic alerts (spikes, repeated complaints) |
+## 🔮 Future Improvements  
+- **Real-Time Integrations:** Automatically fetch live reviews from platforms like Zomato, Swiggy, and Google Reviews via APIs.
+- **Competitor Analysis:** Compare sentiment scores against local similar restaurants.
+- **Automated Responses:** Suggest AI-drafted reply templates based on the specific customer review.
 
 ---
 
-## Project Structure
+## 👨‍💻 Author  
 
-```
-Surf Project/
-├── requirements.txt              # Python dependencies
-├── backend/
-│   ├── main.py                   # FastAPI app entry point
-│   ├── db/
-│   │   ├── database.py           # PostgreSQL connection
-│   │   ├── models.py             # SQLAlchemy models 
-│   │   └── crud.py               # Database operations 
-│   ├── routes/
-│   │   ├── auth.py               # Authentication endpoints
-│   │   └── feedback.py           # API endpoints
-│   ├── services/
-│   │   ├── ai_service.py         # AI integration
-│   │   └── batch_processor.py    # Batch processing
-│   └── utils/
-│       └── csv_parser.py         # CSV validation
-│
-├── frontend-v2/
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx              # Landing page
-│   │   │   ├── dashboard/            # Dashboard pages
-│   │   │   └── (auth)/               # Login & Signup pages
-│   │   ├── components/               # React components (charts, layout)
-│   │   └── context/                  # React context (Auth)
-│   └── package.json
-```
-
----
-
-## Rate Limiting
-
-The Groq free tier has rate limits (~15 requests per minute). The app handles this with:
-- **5-second delay** between batch processing
-- **Exponential backoff retry** on 429 errors (10s → 20s → 30s, max 3 retries)
-
----
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|---------|
-| `ImportError: attempted relative import` | Run uvicorn from project root: `uvicorn backend.main:app --reload` |
-| `Turbopack is not supported` | Already fixed — uses `next dev --webpack` |
-| `429 Too Many Requests` | Wait a minute and retry. Free tier has rate limits |
-| `GOOGLE_API_KEY not valid` | Get a new key from [AI Studio](https://aistudio.google.com/app/apikey) and update `.env` |
-| `Database connection failed` | Ensure PostgreSQL is running and `.env` credentials are correct |
+**Prince Jha**  
+- 🐙 GitHub: [@princejha-dev](https://github.com/princejha-dev)  
+- 💼 LinkedIn: [princejha-dev](https://linkedin.com/in/princejha-dev)

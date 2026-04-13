@@ -22,7 +22,7 @@ export default function SignupPage() {
 
     setLoading(true)
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/signup", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role }),
@@ -60,17 +60,15 @@ export default function SignupPage() {
         <div className="flex p-1 bg-[#f4f3fa] rounded-xl border border-[#e3e1e9]">
           <button
             onClick={() => setRole("customer")}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-              role === "customer" ? "bg-white text-[#1a1b21] shadow" : "text-[#757682] hover:text-[#1a1b21]"
-            }`}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${role === "customer" ? "bg-white text-[#1a1b21] shadow" : "text-[#757682] hover:text-[#1a1b21]"
+              }`}
           >
             Customer
           </button>
           <button
             onClick={() => setRole("business")}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-              role === "business" ? "bg-[#1e3a8a] text-white shadow" : "text-[#757682] hover:text-[#1a1b21]"
-            }`}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${role === "business" ? "bg-[#1e3a8a] text-white shadow" : "text-[#757682] hover:text-[#1a1b21]"
+              }`}
           >
             Business
           </button>
